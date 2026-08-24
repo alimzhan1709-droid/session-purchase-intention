@@ -1,0 +1,16 @@
+# The benchmark is public and verified by digest; fetch it with fetch_data.py
+online_shoppers_intention.csv
+*.zip
+
+# Generated outputs
+uci_corrected_results/
+thesis_corrected_figures/
+gaps_results/
+protocol_contrast.csv
+*.png
+
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.DS_Store
