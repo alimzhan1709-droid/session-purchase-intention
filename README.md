@@ -15,14 +15,14 @@ This study asks how much of the strong performance commonly reported for the UCI
 
 | Setting | F1 | ROC-AUC | AP | Test prevalence |
 |---|---|---|---|---|
-| Full LightGBM (PageValues retained) | 0.609 | 0.835 | 0.660 | 0.207 |
+| Full LightGBM (PageValues retained) | 0.607 | 0.834 | 0.661 | 0.207 |
 | Single-rule baseline `PageValues > 0` | 0.659 | 0.807 | 0.577 | 0.207 |
-| Behavior-only LightGBM (primary) | 0.422 | 0.695 | 0.340 | 0.207 |
-| Prior-work-style protocol (random split, SMOTE, 0.5) | 0.650 | 0.895 | 0.654 | 0.155 |
+| Behavior-only LightGBM (primary) | 0.421 | 0.693 | 0.341 | 0.207 |
+| Prior-work-style protocol (random split, SMOTE, 0.5) | 0.643 | 0.894 | 0.653 | 0.155 |
 
-- The full model is significantly **outperformed on threshold F1** by the single-rule baseline `PageValues > 0` (paired difference -0.0507, 95% bootstrap CI [-0.0671, -0.0339]).
-- Once `PageValues` is withheld, AP falls to 0.340 and ROC-AUC to 0.695, and the three algorithm families become **statistically indistinguishable** (test F1 0.411-0.422, inside the bootstrap interval of the selected model [0.408, 0.433]).
-- The winning family is **unstable across pre-declared feature-timing settings** - LightGBM, Random Forest, and Logistic Regression are each selected in turn from the same 549-session validation month.
+- The full model is significantly **outperformed on threshold F1** by the single-rule baseline `PageValues > 0` (paired difference -0.0527, 95% bootstrap CI [-0.0703, -0.0359]).
+- Once `PageValues` is withheld, AP falls to 0.341 and ROC-AUC to 0.693, and the three algorithm families become **statistically indistinguishable** (test F1 0.414-0.425, inside the bootstrap interval of the selected model [0.406, 0.436]). In the primary setting the selected family is not even the strongest on the frozen period: October picks LightGBM on validation F1, while Random Forest attains the higher test F1 of 0.425.
+- The winning family is **unstable across pre-declared feature-timing settings** - the same protocol selects LightGBM under no-month features and Logistic Regression under both cyclical-month settings and in the engagement-only ablation, all from the same 549-session validation month of 115 purchases.
 - Random splitting inflates separability. Holding the prior-work machinery constant and changing one factor at a time attributes about **0.058** of ROC-AUC to the random partition and about **0.156** to retaining `PageValues`, so the admitted feature matters roughly three times as much as the split.
 - Average precision is not comparable across the two designs at face value: a random split leaves test prevalence at 0.155 while the frozen period carries 0.207. Against its own no-skill baseline the prior-work protocol reaches 4.2x prevalence and the frozen full model 3.2x.
 
@@ -68,57 +68,45 @@ purchases, 125 exact duplicate rows).
 ## Reproduction status
 
 `uci_online_shoppers_kbtu_pipeline.py` is a **reconstruction**. The original script was lost, and
-this one was rebuilt from the recorded execution algorithm and validated against the published
-tables. The whole pipeline was executed on Python 3.9.6 / scikit-learn 1.6.1 / LightGBM 4.6.0,
-which is the published LightGBM but not the published scikit-learn.
+this one was rebuilt from the recorded execution algorithm. The reported numbers were then
+regenerated from it inside the declared reference environment, so the study text and this code now
+agree by construction rather than by comparison.
 
-**Reproduced exactly** (to three decimals):
+**Reproduced exactly from the original tables** (to three decimals): partition sizes and
+prevalences (7,056 / 549 / 4,725 at 11.58% / 20.95% / 20.66%), row and class counts, the 125 exact
+duplicate rows, every baseline (`PageValues > 0` at P 0.617 / R 0.708 / F1 0.659 / ROC-AUC 0.807 /
+AP 0.577 with 691 true and 429 false positives; the October-tuned cut-point 6.887;
+prevalence-constant Brier 0.172; majority-class accuracy 0.7934), and all five Logistic Regression
+rows of the candidate table.
 
-- Partition sizes and prevalences: 7,056 / 549 / 4,725 at 11.58% / 20.95% / 20.66%.
-- Row and class counts, and the 125 exact duplicate rows.
-- Every baseline: `PageValues > 0` at P 0.617 / R 0.708 / F1 0.659 / ROC-AUC 0.807 / AP 0.577 with
-  691 true and 429 false positives; the October-tuned cut-point 6.887; prevalence-constant Brier
-  0.172; majority-class accuracy 0.7934.
-- All five Logistic Regression rows of the candidate table, and the engagement-only LightGBM row.
+**Not recovered: the original tree-model configuration.** The published Random Forest and LightGBM
+results could not be reproduced exactly, and three explanations were ruled out in turn:
 
-**Reproduced within 0.009**, which is far inside the reported bootstrap intervals:
+- *Library version.* The declared environment was rebuilt exactly and re-run. It selects the same
+  thresholds as scikit-learn 1.6.1, so the version was not the cause.
+- *Hyperparameters.* A 256-point LightGBM sweep and a 96-point Random Forest sweep over plausible
+  settings failed to reach the published values. The closest LightGBM candidate matched two figures
+  exactly but moved the upper-bound setting further away, which is the signature of fitting to a few
+  targets rather than recovering an original.
+- *Data, features, splits, threshold rule, metrics.* All exact, as the Logistic Regression and
+  baseline rows above demonstrate.
 
-- Ranking metrics for every one of the fourteen candidate rows. The largest deviation in ROC-AUC or
-  AP anywhere in the table is 0.009; LightGBM rows land within 0.006.
-- Bootstrap intervals: full LightGBM F1 0.607 [0.582, 0.631] against 0.609 [0.583, 0.632];
-  behavior-only 0.421 [0.406, 0.436] against 0.422 [0.408, 0.433]; the `PageValues` row is exact.
-- The paired contrast and its conclusion: F1 difference -0.0527 [-0.0703, -0.0359] against
-  -0.0507 [-0.0671, -0.0339], with 0% of resamples positive; ROC-AUC +0.0274 against +0.0281 and
-  AP +0.0846 against +0.0836, both 100% positive. The rejection of the F1 hypothesis is unchanged.
-- Brier scores: 0.120 / 0.205 / 0.172 / 0.207 against 0.121 / 0.204 / 0.172 / 0.207.
-- Grouped permutation importance: `PageValues` 0.432 against 0.424, `ExitRates` 0.023 against
-  0.022, `BounceRates` 0.017 exactly; behavior-only `ExitRates` 0.045 against 0.043, with
-  `duration_per_page` and `OperatingSystems` exact. The dominance ordering is unchanged.
+The configuration documented in the surviving add-on script was therefore kept rather than tuned
+toward the target numbers, and the study was recomputed from it. Across every candidate row the
+reconstruction and the original agree to within 0.009 on ranking metrics; what moves is the October
+threshold argmax and everything downstream of it. October carries 115 purchases and a nearly flat F1
+surface near the optimum, so the operating point is far less sharply determined than its decimals
+suggest - the selection instability the study reports as a finding, met from the other direction.
 
-**Does not reproduce exactly: everything downstream of the October threshold.** The selection
-argmax moves under a different scikit-learn version - for behavior-only LightGBM from 0.305 to
-0.400, for full Random Forest from 0.550 to 0.555 - and the confusion matrices move with it. The
-full model stays close (3,448 / 301 / 420 / 556 against 3,422 / 327 / 406 / 570), the behavior-only
-model does not (2,105 / 1,644 / 278 / 698 against 1,737 / 2,012 / 178 / 798). The error-group
-profiles inherit the same shift, though within-group medians agree closely where the groups
-overlap: full-model false-positive and false-negative median product durations match at 1,467.7
-and 2,356.9 seconds.
-
-This is not a discrepancy in the analysis so much as a measurement of it. October carries 549
-sessions and 115 purchases, its F1 surface is flat near the optimum, and a small change in tree
-construction between library versions is enough to move the selected point. The study reports this
-selection instability as a finding; the reconstruction encounters it from the other direction.
-
-Pin to the reference environment below to reproduce the published operating points.
-
-Note for macOS: LightGBM's wheel links `@rpath/libomp.dylib` but does not ship it, and its only
+**macOS note.** The LightGBM wheel links `@rpath/libomp.dylib` without shipping it, and its only
 rpath entries point at Homebrew locations. Installing `libomp` (`brew install libomp`) is the
 supported fix.
 
 ## Reference environment
 
 Python 3.13.5, pandas 2.2.3, NumPy 2.3.5, scikit-learn 1.8.0, LightGBM 4.6.0, SciPy 1.17.0,
-Matplotlib 3.10.8, imbalanced-learn 0.12.4.
+Matplotlib 3.10.8, imbalanced-learn 0.12.4. The reported results were produced in exactly this
+environment; `requirements.txt` pins it.
 
 ## Data
 
