@@ -24,6 +24,10 @@ This study asks how much of the strong performance commonly reported for the UCI
 - Once `PageValues` is withheld, AP falls to 0.341 and ROC-AUC to 0.693, and the three algorithm families become **statistically indistinguishable** (test F1 0.414-0.425, inside the bootstrap interval of the selected model [0.406, 0.436]). In the primary setting the selected family is not even the strongest on the frozen period: October picks LightGBM on validation F1, while Random Forest attains the higher test F1 of 0.425.
 - The winning family is **unstable across pre-declared feature-timing settings** - the same protocol selects LightGBM under no-month features and Logistic Regression under both cyclical-month settings and in the engagement-only ablation, all from the same 549-session validation month of 115 purchases.
 - Random splitting inflates separability. Holding the prior-work machinery constant and changing one factor at a time attributes about **0.058** of ROC-AUC to the random partition and about **0.156** to retaining `PageValues`, so the admitted feature matters roughly three times as much as the split.
+- The selected operating points are precision 0.649 / recall 0.570 at Brier 0.120 for the full
+  model and precision 0.298 / recall 0.715 at Brier 0.205 for the behavior-only model. A Platt
+  layer fitted on the October month lowers the behavior-only Brier to 0.155 without changing its
+  ranking, so the poor probability quality is separable from the ranking signal.
 - Average precision is not comparable across the two designs at face value: a random split leaves test prevalence at 0.155 while the frozen period carries 0.207. Against its own no-skill baseline the prior-work protocol reaches 4.2x prevalence and the frozen full model 3.2x.
 
 ## Interpretation
